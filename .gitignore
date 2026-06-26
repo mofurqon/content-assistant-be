@@ -1,0 +1,19 @@
+# Environment
+.env
+
+# Chroma DB (generated, not committed)
+chroma_db/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# KB files (may contain proprietary content)
+kb/*.pdf
+
+# OS
+.DS_Store
