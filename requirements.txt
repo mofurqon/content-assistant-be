@@ -18,3 +18,10 @@ python-dotenv==1.1.0
 
 # Web research (optional)
 firecrawl-py==2.7.0
+
+# API
+fastapi>=0.111
+uvicorn[standard]>=0.29
+
+# Orchestration
+langgraph>=1.0

@@ -9,6 +9,7 @@ COLLECTION_NAME = "knowledge_base"
 
 # Retrieval
 TOP_K = 5
+KB_SIMILARITY_THRESHOLD = 0.5  # minimum cosine similarity to include a chunk (Gemini embedding-001 scores lower than OpenAI)
 
 # Improvement loop
 MAX_ITERATIONS = 2
