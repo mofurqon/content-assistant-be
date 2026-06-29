@@ -45,7 +45,10 @@ def stream_article(idea: str, draft: str, research_summary: str):
 def generate_image_prompt(idea: str) -> str:
     llm = get_llm(temperature=0.4)
     response = llm.invoke([HumanMessage(content=IMAGE_PROMPT.format(idea=idea))])
-    return response.content.strip()
+    text = response.content.strip()
+    if "**Prompt:**" in text:
+        text = text.split("**Prompt:**", 1)[-1].strip()
+    return text
 
 
 def finalize(idea: str, draft: str, research_summary: str) -> dict:

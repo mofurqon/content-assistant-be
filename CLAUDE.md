@@ -12,6 +12,7 @@ This is a case study prototype — not production-ready.
 ## Stack
 - **Language**: Python 3.11+
 - **UI**: Streamlit (streaming supported)
+- **API**: FastAPI + Uvicorn (HTTP interface for external clients)
 - **LLM + Embeddings**: Google Gemini (Flash for LLM, embedding-001 for embeddings)
 - **Orchestration**: LangChain
 - **Vector DB**: Chroma (local, persistent)
@@ -21,15 +22,29 @@ This is a case study prototype — not production-ready.
 
 ## Folder Structure
 ```
-ai-content-assistant/
-├── app.py                  # Streamlit entry point
+content-assistant/
+├── domain/
+│   └── models.py           # Pydantic domain entities: Idea, KBChunk, EvalResult, ResearchResult, PipelineResult
+├── services/
+│   └── content_pipeline.py # ContentPipelineService — wraps agent steps, returns domain models
+├── api/                    # FastAPI HTTP interface
+│   ├── main.py             # FastAPI app + CORS + router registration
+│   ├── routes/
+│   │   ├── health.py       # GET /health
+│   │   ├── ideas.py        # POST /v1/ideas
+│   │   └── content.py      # POST /v1/draft (SSE), /v1/finalize (SSE), /v1/pipeline
+│   └── schemas/
+│       ├── requests.py     # HTTP request bodies
+│       └── responses.py    # HTTP response shapes
+├── ui/
+│   └── app.py              # Streamlit entry point (calls ContentPipelineService directly)
 ├── config/
-│   ├── settings.py         # Env loading + require_env (was agent/env.py)
-│   └── constants.py        # All non-prompt tuning constants (paths, TOP_K, thresholds, CRITERIA, chunk/batch, firecrawl)
+│   ├── settings.py         # Env loading + require_env
+│   └── constants.py        # All non-prompt tuning constants
 ├── core/
-│   └── llm.py              # Cached get_llm / get_embeddings factory (was agent/llm.py)
+│   └── llm.py              # Cached get_llm / get_embeddings factory
 ├── agent/
-│   ├── pipeline.py         # Main agent orchestration (calls all steps in order)
+│   ├── pipeline.py         # Blocking pipeline orchestration (used by services)
 │   ├── ideas.py            # Step 1: Generate content ideas
 │   ├── retriever.py        # Step 2: RAG retrieval from Chroma
 │   ├── generator.py        # Step 3: Draft generation with KB context
@@ -47,6 +62,14 @@ ai-content-assistant/
 ├── requirements.txt
 ├── README.md
 └── CLAUDE.md               # This file
+```
+
+### Layer dependency rule
+```
+api/  ──┐
+        ├──▶  services/  ──▶  agent/  ──▶  core/ + config/
+ui/   ──┘          ▼
+               domain/models   ◀── (imported by all layers; no internal deps)
 ```
 
 ---
@@ -68,10 +91,11 @@ ai-content-assistant/
 - **Stopping rule**: Max 2 improvement iterations OR average eval score ≥ 4.0
 - **Idea selection**: Human-in-the-loop via Streamlit UI (satisfies case study section 6c)
 - **KB scope**: Fixed pre-ingested PDF, no dynamic upload required
-- **Streaming**: User-facing prose (draft + final article) streams token-by-token to Streamlit via `st.write_stream` (`stream_draft` in generator.py, `stream_article` in finalizer.py). Internal structured steps (evaluation, improvement, research, image prompt) run blocking under spinners/status.
+- **Streaming**: User-facing prose (draft + final article) streams token-by-token. In Streamlit: `st.write_stream(svc.stream_draft(...))`. In FastAPI: `StreamingResponse` with `text/event-stream` (SSE). Both consume the same generator from `ContentPipelineService`.
 - **Embeddings**: Same Gemini provider for both LLM and embeddings (single API key)
 - **Client reuse**: LLM/embedding clients are built by a cached factory in `core/llm.py` (`get_llm(temperature)` / `get_embeddings()`, `@lru_cache`) — one instance per temperature is reused process-wide instead of rebuilt on every call
 - **Config separation**: cross-cutting code lives outside `agent/` — env loading in `config/settings.py`, all non-prompt tuning knobs in `config/constants.py`, LLM clients in `core/llm.py`. `agent/` holds only step logic + pipeline; prompt templates stay inline with their functions
+- **Clean architecture layers**: `domain/models.py` defines shared data contracts (Pydantic); `services/` wraps `agent/` steps and returns domain models; `api/` and `ui/` are independent interface adapters that both call `services/` — neither knows about the other
 
 ---
 
@@ -88,7 +112,8 @@ All required vars are validated at use via `require_env()` in `config/settings.p
 
 ## Commands
 - `python -m ingest.ingest` — Run once to ingest the KB PDF into Chroma (run from project root)
-- `streamlit run app.py` — Start the Streamlit UI
+- `streamlit run ui/app.py` — Start the Streamlit UI
+- `uvicorn api.main:app --reload --port 8000` — Start the FastAPI server (docs at /docs)
 
 ---
 
@@ -121,17 +146,18 @@ Work is done phase by phase. Do not move to the next phase until the current one
 - [x] Idea selection UI
 - [x] Step-by-step output display
 
-### Phase 5 — Polish & Docs
-- [ ] README.md
-- [ ] Sample input/output
-- [ ] Trade-offs section in docs
+### Phase 5 — Polish & Docs ✅
+- [x] README.md
+- [x] Sample input/output
+- [x] Trade-offs section in docs
 
 ---
 
 ## Rules for Claude Code
 - Always work within the current phase — do not skip ahead
 - Each agent step lives in its own file — keep them small and focused
-- No FastAPI, no REST endpoints — Streamlit calls Python functions directly
+- `ui/` and `api/` must never import from each other — both call `services/` only
+- `agent/` must never import from `services/`, `api/`, or `ui/`
 - Never hardcode API keys — always use .env
 - Keep LLM prompts in the same file as the function that uses them
 - After each phase, update the phase gate checkboxes above
