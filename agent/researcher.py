@@ -1,8 +1,12 @@
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from core.llm import get_llm
-from config.constants import FIRECRAWL_LIMIT, FETCH_MAX_CHARS
+from config.constants import FIRECRAWL_LIMIT, FETCH_MAX_CHARS, FIRECRAWL_CONCURRENCY
+
+_firecrawl_sem = threading.Semaphore(FIRECRAWL_CONCURRENCY)
 
 QUERY_PROMPT = """Given the article idea below, generate 3 concise web search queries to find supporting facts, statistics, or expert opinions.
 
@@ -36,22 +40,25 @@ def _fetch_content(query: str) -> str:
     if not firecrawl_key:
         return f"[Mock result for: {query}] No live data — FIRECRAWL_API_KEY not set."
 
-    try:
-        from firecrawl import FirecrawlApp
-        app = FirecrawlApp(api_key=firecrawl_key)
-        result = app.search(query, limit=FIRECRAWL_LIMIT)
-        texts = []
-        for item in result.get("data", []):
-            texts.append(item.get("markdown") or item.get("content") or "")
-        return "\n\n".join(texts)[:FETCH_MAX_CHARS]
-    except Exception as e:
-        return f"[Firecrawl error: {e}]"
+    with _firecrawl_sem:
+        try:
+            from firecrawl import FirecrawlApp
+            app = FirecrawlApp(api_key=firecrawl_key)
+            result = app.search(query, limit=FIRECRAWL_LIMIT)
+            texts = []
+            for item in result.data:
+                texts.append(item.get("markdown") or item.get("content") or "")
+            return "\n\n".join(texts)[:FETCH_MAX_CHARS]
+        except Exception as e:
+            return f"[Firecrawl error: {e}]"
 
 
 def research(idea: str) -> dict:
     llm = get_llm(temperature=0.3)
     queries = _generate_queries(idea, llm)
-    raw_results = {q: _fetch_content(q) for q in queries}
+    with ThreadPoolExecutor(max_workers=FIRECRAWL_CONCURRENCY) as pool:
+        contents = list(pool.map(_fetch_content, queries))
+    raw_results = dict(zip(queries, contents))
 
     combined = "\n\n".join(f"Query: {q}\n{c}" for q, c in raw_results.items())
     summary_prompt = SUMMARIZE_PROMPT.format(idea=idea, content=combined)

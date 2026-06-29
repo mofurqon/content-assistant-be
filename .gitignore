@@ -14,6 +14,7 @@ venv/
 
 # KB files (may contain proprietary content)
 kb/*.pdf
+!kb/software-testing-guide-book.pdf
 
 # OS
 .DS_Store
