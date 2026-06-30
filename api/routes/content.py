@@ -1,10 +1,11 @@
 import json
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from langgraph.types import Command
 
 from agent.graph import pipeline_graph
+from api.middleware.rate_limit import rate_limit
 from api.schemas.requests import PipelineFeedbackRequest, PipelineStartRequest
 from api.schemas.responses import SessionResponse
 
@@ -27,7 +28,8 @@ async def start_pipeline(session_id: str, req: PipelineStartRequest) -> SessionR
 
 
 @router.get("/pipeline/{session_id}/stream")
-async def stream_pipeline(session_id: str) -> StreamingResponse:
+@rate_limit("3/minute")
+async def stream_pipeline(request: Request, session_id: str) -> StreamingResponse:
     """Resume from the current interrupt using the staged pending_resume value.
     Emits awaiting_feedback after the draft, or done after the final article."""
     config = {"configurable": {"thread_id": session_id}}

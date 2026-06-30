@@ -1,20 +1,18 @@
 import asyncio
 from typing import TypedDict
 
-from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.types import interrupt
 
 from agent.evaluator import evaluate
-from agent.finalizer import ARTICLE_PROMPT, IMAGE_PROMPT, generate_image_prompt
-from agent.generator import PROMPT_TEMPLATE as DRAFT_PROMPT
+from agent.finalizer import finalize
+from agent.generator import generate_draft
 from agent.ideas import generate_ideas
 from agent.improver import improve_once
 from agent.researcher import research
 from agent.retriever import retrieve_with_scores
 from config.constants import MAX_ITERATIONS, SCORE_THRESHOLD
-from core.llm import get_llm
 
 
 class PipelineState(TypedDict):
@@ -61,20 +59,11 @@ async def node_retrieve(state: PipelineState) -> dict:
 
 
 async def node_generate(state: PipelineState) -> dict:
-    llm = get_llm(temperature=0.5)
-    context = "\n\n---\n\n".join(state["kb_chunks"])
-    prompt = DRAFT_PROMPT.format(
-        idea=state["idea"],
-        context=context,
-        target_audience=state["target_audience"],
-        content_type=state["content_type"],
-        tone=state["tone"],
+    draft = await generate_draft(
+        state["idea"], state["kb_chunks"],
+        state["target_audience"], state["content_type"], state["tone"],
     )
-    full = ""
-    async for chunk in llm.astream([HumanMessage(content=prompt)]):
-        if chunk.content:
-            full += chunk.content
-    return {"draft": full.strip(), "current_draft": full.strip()}
+    return {"draft": draft, "current_draft": draft}
 
 
 async def node_review(state: PipelineState) -> dict:
@@ -96,23 +85,12 @@ async def node_improve(state: PipelineState) -> dict:
 
 
 async def node_research(state: PipelineState) -> dict:
-    result = await asyncio.to_thread(research, state["idea"])
+    result = await research(state["idea"])
     return {"research": result}
 
 
 async def node_finalize(state: PipelineState) -> dict:
-    llm = get_llm(temperature=0.4)
-    article_prompt = ARTICLE_PROMPT.format(
-        idea=state["idea"],
-        draft=state["current_draft"],
-        research_summary=state["research"]["summary"],
-    )
-    full = ""
-    async for chunk in llm.astream([HumanMessage(content=article_prompt)]):
-        if chunk.content:
-            full += chunk.content
-    img_prompt = await asyncio.to_thread(generate_image_prompt, state["idea"])
-    return {"article": full.strip(), "image_prompt": img_prompt}
+    return await finalize(state["idea"], state["current_draft"], state["research"]["summary"])
 
 
 def route_after_eval(state: PipelineState) -> str:

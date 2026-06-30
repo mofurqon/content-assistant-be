@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+RATE_LIMIT_ENABLED: bool = os.environ.get("RAILWAY_ENVIRONMENT") is not None
+
 
 def require_env(name: str) -> str:
     """

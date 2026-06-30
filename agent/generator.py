@@ -1,3 +1,5 @@
+from typing import Callable
+
 from langchain_core.messages import HumanMessage
 from core.llm import get_llm
 
@@ -23,12 +25,13 @@ Requirements:
 Write the full article now:"""
 
 
-def generate_draft(
+async def generate_draft(
     idea: str,
     kb_chunks: list[str],
     target_audience: str = "general readers",
     content_type: str = "Article",
     tone: str = "Professional and informative",
+    stream_callback: Callable[[str], None] | None = None,
 ) -> str:
     llm = get_llm(temperature=0.5)
     context = "\n\n---\n\n".join(kb_chunks)
@@ -39,26 +42,10 @@ def generate_draft(
         content_type=content_type,
         tone=tone,
     )
-    response = llm.invoke([HumanMessage(content=prompt)])
-    return response.content.strip()
-
-
-def stream_draft(
-    idea: str,
-    kb_chunks: list[str],
-    target_audience: str = "general readers",
-    content_type: str = "Article",
-    tone: str = "Professional and informative",
-):
-    llm = get_llm(temperature=0.5)
-    context = "\n\n---\n\n".join(kb_chunks)
-    prompt = PROMPT_TEMPLATE.format(
-        idea=idea,
-        context=context,
-        target_audience=target_audience,
-        content_type=content_type,
-        tone=tone,
-    )
-    for chunk in llm.stream([HumanMessage(content=prompt)]):
+    full = ""
+    async for chunk in llm.astream([HumanMessage(content=prompt)]):
         if chunk.content:
-            yield chunk.content
+            full += chunk.content
+            if stream_callback:
+                stream_callback(chunk.content)
+    return full.strip()
