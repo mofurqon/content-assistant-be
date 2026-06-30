@@ -2,7 +2,7 @@
 
 An AI agent that generates high-quality articles from a topic using a RAG pipeline, self-evaluation loop, and web research enrichment.
 
-Built as a case study prototype with Google Gemini, LangChain, ChromaDB, Streamlit, and FastAPI.
+Built as a case study prototype with Google Gemini, LangGraph, LangChain, ChromaDB, and FastAPI.
 
 ---
 
@@ -11,14 +11,14 @@ Built as a case study prototype with Google Gemini, LangChain, ChromaDB, Streaml
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                     Interface Layer                      │
-│   ui/app.py (Streamlit)     api/main.py (FastAPI)       │
+│                  api/main.py (FastAPI)                   │
 └───────────────────┬─────────────────────────────────────┘
-                    │ both call
+                    │ drives
 ┌───────────────────▼─────────────────────────────────────┐
-│              services/content_pipeline.py               │
-│           ContentPipelineService (use cases)            │
+│                  agent/graph.py (LangGraph)              │
+│           Stateful pipeline graph with checkpointing     │
 └───────────────────┬─────────────────────────────────────┘
-                    │ wraps
+                    │ step nodes
 ┌───────────────────▼─────────────────────────────────────┐
 │                     agent/  (step logic)                 │
 │  ideas → retriever → generator → evaluator →            │
@@ -31,7 +31,7 @@ Built as a case study prototype with Google Gemini, LangChain, ChromaDB, Streaml
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Layer dependency rule:** `api/` and `ui/` call `services/` only. `agent/` never imports from layers above it. `domain/models.py` is imported by all layers.
+**Layer dependency rule:** `api/` drives `agent/graph.py` directly. `agent/` never imports from layers above it. `domain/models.py` is imported by all layers.
 
 ---
 
@@ -46,6 +46,8 @@ Built as a case study prototype with Google Gemini, LangChain, ChromaDB, Streaml
 | 5 | `agent/improver.py` | Rewrites weak drafts; loops up to 2× or until avg score ≥ 4.0 |
 | 6 | `agent/researcher.py` | Generates 3 web queries, fetches & summarizes external sources |
 | 7 | `agent/finalizer.py` | Merges improved draft + research into final 700–1000 word article + image prompt |
+
+The pipeline pauses after step 3 (draft generation) to collect optional human feedback before continuing to research and finalization.
 
 ---
 
@@ -65,11 +67,13 @@ cp .env.example .env
 
 Edit `.env`:
 
-```
+```env
 GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-2.0-flash
-GEMINI_EMBED_MODEL=embedding-001
+GEMINI_EMBED_MODEL=gemini-embedding-2
 FIRECRAWL_API_KEY=your_key_here   # optional — mocked if omitted
+LOG_LEVEL=INFO
+RAG_SIMILARITY_THRESHOLD=0.5
 ```
 
 ### 3. Ingest the knowledge base
@@ -99,16 +103,6 @@ Ingest complete.
 
 ## Running
 
-### Streamlit UI
-
-```bash
-streamlit run ui/app.py
-```
-
-Opens at `http://localhost:8501`. Full interactive pipeline with streaming output.
-
-### FastAPI
-
 ```bash
 uvicorn api.main:app --reload --port 8000
 ```
@@ -119,49 +113,77 @@ Interactive docs at `http://localhost:8000/docs`.
 
 ## API Reference
 
+The API is session-based. Each pipeline run is tied to a `session_id` returned on session creation.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check |
-| POST | `/v1/ideas` | Generate 5 article ideas from a topic |
-| POST | `/v1/draft` | Stream draft article tokens (SSE) |
-| POST | `/v1/finalize` | Stream final article tokens (SSE) |
-| POST | `/v1/pipeline` | Run full pipeline, return JSON result |
+| POST | `/v1/ideas` | Create a session and stage a topic |
+| GET | `/v1/ideas/{session_id}/stream` | Stream idea generation (SSE) |
+| POST | `/v1/pipeline/{session_id}` | Stage a selected idea + content criteria |
+| GET | `/v1/pipeline/{session_id}/stream` | Stream draft then final article (SSE) |
+| POST | `/v1/pipeline/{session_id}/resume` | Stage human feedback, then re-call stream |
+
+### SSE event types
+
+| `type` | When emitted | Payload |
+|--------|-------------|---------|
+| `token` | During LLM generation | `{ "content": "..." }` |
+| `node` | When a pipeline node starts | `{ "name": "generate" \| "evaluate" \| ... }` |
+| `interrupted` | After ideas are ready | `{ "ideas": ["...", ...] }` |
+| `awaiting_feedback` | After draft is ready | `{ "draft": "..." }` |
+| `done` | Pipeline complete | `{ "result": { ... } }` |
 
 ### Examples
 
-**Generate ideas**
+**Step 1 — Create a session**
 ```bash
 curl -X POST http://localhost:8000/v1/ideas \
   -H "Content-Type: application/json" \
   -d '{"topic": "software testing best practices"}'
 ```
 ```json
-{
-  "ideas": [
-    "Why Shift-Left Testing Reduces Bug Costs by 10x",
-    "The Art of Writing Testable Code from Day One",
-    "Unit vs Integration vs E2E: Choosing the Right Test for the Job",
-    "Test-Driven Development in Practice: A Step-by-Step Guide",
-    "How to Build a Reliable CI Pipeline That Developers Actually Trust"
-  ]
-}
+{ "session_id": "a1b2c3d4-..." }
 ```
 
-**Run full pipeline**
+**Step 2 — Stream idea generation**
 ```bash
-curl -X POST http://localhost:8000/v1/pipeline \
-  -H "Content-Type: application/json" \
-  -d '{"idea": "Why Shift-Left Testing Reduces Bug Costs by 10x"}'
+curl http://localhost:8000/v1/ideas/a1b2c3d4-.../stream
 ```
-Returns a `PipelineResult` JSON with `kb_chunks`, `draft`, `evaluations`, `research`, `article`, and `image_prompt`.
+Streams `token` events, then emits `interrupted` with the ideas list.
 
-**Stream draft (SSE)**
+**Step 3 — Stage selected idea**
 ```bash
-curl -X POST http://localhost:8000/v1/draft \
+curl -X POST http://localhost:8000/v1/pipeline/a1b2c3d4-... \
   -H "Content-Type: application/json" \
-  -d '{"idea": "Why Shift-Left Testing Reduces Bug Costs by 10x"}'
+  -d '{
+    "selected_idea": "Why Shift-Left Testing Reduces Bug Costs by 10x",
+    "criteria": {
+      "target_audience": "software engineers",
+      "content_type": "Article",
+      "tone": "Professional and informative"
+    }
+  }'
 ```
-Response is a stream of `data: <token>` lines (Server-Sent Events).
+
+**Step 4 — Stream draft**
+```bash
+curl http://localhost:8000/v1/pipeline/a1b2c3d4-.../stream
+```
+Streams `token` and `node` events, then emits `awaiting_feedback` with the draft.
+
+**Step 5 — Submit feedback (optional)**
+```bash
+curl -X POST http://localhost:8000/v1/pipeline/a1b2c3d4-.../resume \
+  -H "Content-Type: application/json" \
+  -d '{"human_feedback": "Add more examples and make it more concise."}'
+```
+
+**Step 6 — Stream final article**
+```bash
+curl http://localhost:8000/v1/pipeline/a1b2c3d4-.../stream
+```
+Streams tokens for the final article, then emits `done` with the full result.
 
 ---
 
@@ -210,10 +232,10 @@ Response is a stream of `data: <token>` lines (Server-Sent Events).
 
 **Image prompt (Step 7):**
 ```
-A split-screen illustration showing a developer catching a small bug early in the 
-development cycle on the left, versus a team of engineers firefighting a production 
-outage caused by the same bug on the right. The left panel is calm, green-tinted, 
-with clean code on a monitor. The right panel is chaotic, red-alert atmosphere, with 
+A split-screen illustration showing a developer catching a small bug early in the
+development cycle on the left, versus a team of engineers firefighting a production
+outage caused by the same bug on the right. The left panel is calm, green-tinted,
+with clean code on a monitor. The right panel is chaotic, red-alert atmosphere, with
 dashboards showing errors. Style: flat design, professional, tech-themed.
 ```
 
@@ -229,6 +251,10 @@ dashboards showing errors. Style: flat design, professional, tech-themed.
 **Pro:** Zero infrastructure — just a directory. No network hop for vector search. Fast iteration.  
 **Con:** Not horizontally scalable. A single pod owns the `chroma_db/` directory; deploying two instances means two divergent vector stores. Production would swap in a managed vector DB (Pinecone, Weaviate, Qdrant).
 
+### LangGraph stateful pipeline with checkpointing
+**Pro:** Human-in-the-loop is first-class — the graph pauses at natural breakpoints (after ideas, after draft) and resumes with user input. State is persisted per session via the in-memory checkpointer.  
+**Con:** The in-memory checkpointer does not survive server restarts. A Railway redeploy clears all in-flight sessions. Production would use a persistent checkpointer (Postgres, Redis).
+
 ### Blocking improvement loop (max 2 iterations)
 **Pro:** Bounded latency — worst case is 2× eval + 2× generation LLM calls.  
 **Con:** The stopping threshold (avg ≥ 4.0) and iteration cap (2) are fixed constants, not learned from user feedback. A low-quality topic that consistently scores 3.9 will always exhaust the loop without improvement.
@@ -237,13 +263,9 @@ dashboards showing errors. Style: flat design, professional, tech-themed.
 **Pro:** Graceful degradation — no crash if key is absent, just mock data.  
 **Con:** Mock results mean the "research" section of the final article adds no real value. The pipeline doesn't signal to the user that research was skipped.
 
-### Streamlit and FastAPI share the service layer (same process model)
-**Pro:** No network round-trip between UI and backend. Streaming generators work natively in both.  
-**Con:** You can't scale the API independently from the UI. A high-traffic API server and a single-user Streamlit session would compete for the same process resources.
-
-### Synchronous FastAPI endpoints
-**Pro:** Simple to reason about; no async complexity.  
-**Con:** Each LLM call blocks a thread for several seconds. Under concurrent load, the thread pool exhausts quickly. Production would use `async def` + `httpx.AsyncClient` or offload to a task queue (Celery, ARQ).
+### Async FastAPI with SSE streaming
+**Pro:** Non-blocking — LLM tokens stream to the client without holding a thread. Multiple concurrent sessions are handled efficiently.  
+**Con:** SSE is one-directional and stateless; clients that disconnect mid-stream lose progress and must re-call the stream endpoint (which re-runs from the last checkpoint).
 
 ---
 
@@ -251,13 +273,30 @@ dashboards showing errors. Style: flat design, professional, tech-themed.
 
 ```
 content-assistant/
-├── domain/models.py           # Pydantic domain entities
-├── services/content_pipeline.py  # Application use cases
-├── api/                       # FastAPI HTTP interface
-├── ui/app.py                  # Streamlit frontend
-├── agent/                     # Core pipeline step implementations
-├── config/                    # Env + tuning constants
-├── core/llm.py                # Cached LLM/embedding factory
-├── ingest/ingest.py           # One-time KB ingestion
-└── kb/                        # Source PDF
+├── domain/models.py              # Pydantic domain entities
+├── api/                          # FastAPI HTTP interface
+│   ├── main.py                   # App + CORS + rate limit setup
+│   ├── middleware/rate_limit.py  # slowapi wrapper (Railway only)
+│   ├── routes/                   # health, ideas, content
+│   └── schemas/                  # Request / response models
+├── agent/                        # Pipeline step implementations
+│   ├── graph.py                  # LangGraph pipeline definition
+│   ├── ideas.py
+│   ├── retriever.py
+│   ├── generator.py
+│   ├── evaluator.py
+│   ├── improver.py
+│   ├── researcher.py
+│   └── finalizer.py
+├── config/
+│   ├── settings.py               # Env loading + require_env
+│   └── constants.py              # Tuning knobs (TOP_K, thresholds, etc.)
+├── core/llm.py                   # Cached LLM/embedding factory
+├── ingest/ingest.py              # One-time KB ingestion
+├── scripts/
+│   ├── start.sh                  # Docker entrypoint
+│   └── calibrate_threshold.py   # RAG threshold tuning
+├── kb/                           # Source PDF
+├── Dockerfile
+└── railway.toml
 ```
