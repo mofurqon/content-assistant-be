@@ -1,0 +1,31 @@
+# Core
+langchain==0.3.25
+langchain-google-genai==2.1.4
+langchain-chroma==0.2.4
+langchain-community==0.3.24
+
+# PDF processing
+pypdf==5.1.0
+
+# Vector DB
+chromadb>=1.0.9
+
+# Environment
+python-dotenv==1.1.0
+
+# Web research (optional)
+firecrawl-py==2.7.0
+
+# API
+fastapi>=0.111
+uvicorn[standard]>=0.29
+
+# Orchestration
+langgraph>=1.0
+
+# Calibration
+scikit-learn
+numpy
+
+# Rate limiting (Railway only)
+slowapi>=0.1.9
