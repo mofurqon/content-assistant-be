@@ -1,3 +1,6 @@
+import asyncio
+from typing import Callable
+
 from langchain_core.messages import HumanMessage
 from core.llm import get_llm
 
@@ -26,20 +29,21 @@ Article Title/Idea: {idea}
 The prompt should describe a professional, relevant visual in 2–3 sentences. Be specific about style, subject, and mood."""
 
 
-def stream_article(idea: str, draft: str, research_summary: str):
-    """
-    Yield the final article token-by-token for live UI rendering
-    (st.write_stream returns the full concatenated string when consumed).
-    """
+async def generate_article(
+    idea: str,
+    draft: str,
+    research_summary: str,
+    stream_callback: Callable[[str], None] | None = None,
+) -> str:
     llm = get_llm(temperature=0.4)
-    prompt = ARTICLE_PROMPT.format(
-        idea=idea,
-        draft=draft,
-        research_summary=research_summary,
-    )
-    for chunk in llm.stream([HumanMessage(content=prompt)]):
+    prompt = ARTICLE_PROMPT.format(idea=idea, draft=draft, research_summary=research_summary)
+    full = ""
+    async for chunk in llm.astream([HumanMessage(content=prompt)]):
         if chunk.content:
-            yield chunk.content
+            full += chunk.content
+            if stream_callback:
+                stream_callback(chunk.content)
+    return full.strip()
 
 
 def generate_image_prompt(idea: str) -> str:
@@ -51,9 +55,9 @@ def generate_image_prompt(idea: str) -> str:
     return text
 
 
-def finalize(idea: str, draft: str, research_summary: str) -> dict:
-    article = "".join(stream_article(idea, draft, research_summary)).strip()
-    return {
-        "article": article,
-        "image_prompt": generate_image_prompt(idea),
-    }
+async def finalize(idea: str, draft: str, research_summary: str) -> dict:
+    article, img_prompt = await asyncio.gather(
+        generate_article(idea, draft, research_summary),
+        asyncio.to_thread(generate_image_prompt, idea),
+    )
+    return {"article": article, "image_prompt": img_prompt}

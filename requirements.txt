@@ -10,9 +10,6 @@ pypdf==5.1.0
 # Vector DB
 chromadb>=1.0.9
 
-# UI
-streamlit==1.45.1
-
 # Environment
 python-dotenv==1.1.0
 
@@ -29,3 +26,6 @@ langgraph>=1.0
 # Calibration
 scikit-learn
 numpy
+
+# Rate limiting (Railway only)
+slowapi>=0.1.9

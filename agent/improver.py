@@ -33,25 +33,31 @@ def improve_once(draft: str, eval_result: dict, human_feedback: str = "") -> str
     return response.content.strip()
 
 
-def improve(draft: str, kb_chunks: list[str], human_feedback: str = "") -> tuple[str, list[dict]]:
+def improve(
+    draft: str, kb_chunks: list[str], kb_scores: list[float], human_feedback: str = ""
+) -> tuple[str, list[dict]]:
     """
     Returns (final_draft, list_of_eval_results).
     Runs up to MAX_ITERATIONS or stops early when average >= SCORE_THRESHOLD.
     human_feedback, when provided, is folded into the first improvement prompt only.
+    Evaluates after each improvement so the last entry always reflects the returned draft.
     Used by services/content_pipeline.py for the Streamlit human-review path.
     """
-    evals = []
     current = draft
+    evals = []
+    # Seed eval guides the first improvement without being added to the list yet.
+    seed = evaluate(current, kb_chunks, kb_scores)
 
     for i in range(MAX_ITERATIONS):
-        result = evaluate(current, kb_chunks)
-        evals.append(result)
-        if result["average"] >= SCORE_THRESHOLD:
+        if seed["average"] >= SCORE_THRESHOLD:
             break
         feedback = human_feedback if i == 0 else ""
-        current = improve_once(current, result, feedback)
+        current = improve_once(current, seed, feedback)
+        seed = evaluate(current, kb_chunks, kb_scores)
+        evals.append(seed)
 
-    if not evals or evals[-1]["average"] < SCORE_THRESHOLD:
-        evals.append(evaluate(current, kb_chunks))
+    if not evals:
+        # Original draft already passed threshold — record its score.
+        evals.append(seed)
 
     return current, evals
