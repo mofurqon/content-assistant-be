@@ -14,11 +14,33 @@ KB_SIMILARITY_THRESHOLD = float(os.getenv("RAG_SIMILARITY_THRESHOLD", "0.5"))  #
 
 # Improvement loop
 MAX_ITERATIONS = 2
-SCORE_THRESHOLD = 4.0
+SCORE_THRESHOLD = 3.5
 
 # Evaluation
 CRITERIA = ["Clarity", "Relevance", "Completeness",
-            "Accuracy", "Actionability", "KB Alignment"]
+            "Accuracy", "Actionability", "Retrieval Relevance"]
+
+# Generator's target word count for the draft (agent/generator.py PROMPT_TEMPLATE
+TARGET_WORD_RANGE = (600, 900)
+
+# Deterministic scoring bounds (agent/scoring.py) — map a raw cosine similarity
+RETRIEVAL_RELEVANCE_LOW = 0.5998
+RETRIEVAL_RELEVANCE_HIGH = 0.7158
+
+# Calibrated via scripts/calibrate_clarity.py
+CLARITY_LOW = 26.47
+CLARITY_HIGH = 39.47
+
+# Calibrated via scripts/calibrate_relevance.py
+RELEVANCE_LOW = 0.8144
+RELEVANCE_HIGH = 0.8449
+
+# Calibrated via scripts/calibrate_completeness.py
+COMPLETENESS_LOW = 0.9214
+COMPLETENESS_HIGH = 0.9932
+
+# Criteria judged by the LLM (agent/evaluator.py) rather than deterministic
+LLM_JUDGED_CRITERIA = {"Accuracy", "Actionability"}
 
 # Ingest chunking / batching (free-tier rate limit)
 CHUNK_SIZE = 1000
@@ -26,9 +48,6 @@ CHUNK_OVERLAP = 200
 BATCH_SIZE = 90       # stay under 100 req/min free tier limit
 BATCH_DELAY = 65      # seconds to wait between batches
 
-# Web research
-# Free tier: 1000 credits/month, 2 concurrent requests.
-# Budget: 3 queries × FIRECRAWL_LIMIT=2 results = 6 credits per research() call → ~166 calls/month.
 FIRECRAWL_CONCURRENCY = 2   # semaphore + thread pool cap
 FIRECRAWL_LIMIT = 2         # results per search query (= credits per query)
 FETCH_MAX_CHARS = 3000

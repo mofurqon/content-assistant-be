@@ -62,7 +62,7 @@ Optional object accepted by `POST /v1/pipeline/{session_id}`. All fields have de
 
 | Field | Type | Description |
 |---|---|---|
-| `scores` | `{ [criterion]: int }` | Per-criterion score (1–5). Criteria: Clarity, Relevance, Completeness, Accuracy, Actionability, KB Alignment |
+| `scores` | `{ [criterion]: int }` | Per-criterion score (1–5). Criteria: Clarity, Relevance, Completeness, Accuracy, Actionability, Retrieval Relevance |
 | `average` | float | Mean of all criterion scores |
 | `reasoning` | string | LLM-generated explanation of the scores |
 
@@ -236,7 +236,7 @@ data: {"type": "done", "result": {
   "image_prompt": "A developer reviewing automated test results on a large monitor...",
   "evaluations": [
     {
-      "scores": {"Clarity": 4, "Relevance": 5, "Completeness": 3, "Accuracy": 4, "Actionability": 4, "KB Alignment": 4},
+      "scores": {"Clarity": 4, "Relevance": 5, "Completeness": 3, "Accuracy": 4, "Actionability": 4, "Retrieval Relevance": 4},
       "average": 4.0,
       "reasoning": "The draft covers the core concept well but lacks depth on tooling..."
     }

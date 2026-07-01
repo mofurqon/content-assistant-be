@@ -42,7 +42,7 @@ Built as a case study prototype with Google Gemini, LangGraph, LangChain, Chroma
 | 1 | `agent/ideas.py` | LLM generates 5 article ideas from user topic |
 | 2 | `agent/retriever.py` | Embeds selected idea, fetches top-5 KB chunks from Chroma |
 | 3 | `agent/generator.py` | Drafts a 600–900 word article using KB chunks as context |
-| 4 | `agent/evaluator.py` | Scores draft on 6 criteria (Clarity, Relevance, Completeness, Accuracy, Actionability, KB Alignment) |
+| 4 | `agent/evaluator.py` | Scores draft on 6 criteria (Clarity, Relevance, Completeness, Accuracy, Actionability, Retrieval Relevance) |
 | 5 | `agent/improver.py` | Rewrites weak drafts; loops up to 2× or until avg score ≥ 4.0 |
 | 6 | `agent/researcher.py` | Generates 3 web queries, fetches & summarizes external sources |
 | 7 | `agent/finalizer.py` | Merges improved draft + research into final 700–1000 word article + image prompt |
@@ -210,7 +210,7 @@ Streams tokens for the final article, then emits `done` with the full result.
 | Completeness | 3/5 |
 | Accuracy | 4/5 |
 | Actionability | 3/5 |
-| KB Alignment | 4/5 |
+| Retrieval Relevance | 4/5 |
 | **Average** | **3.83/5** |
 
 *Below threshold (4.0) → one improvement iteration runs.*
@@ -223,8 +223,8 @@ Streams tokens for the final article, then emits `done` with the full result.
 | Completeness | 4/5 |
 | Accuracy | 5/5 |
 | Actionability | 4/5 |
-| KB Alignment | 5/5 |
-| **Average** | **4.5/5** ✅ |
+| Retrieval Relevance | 4/5 |
+| **Average** | **4.33/5** ✅ |
 
 **Web research (Step 6):** 3 queries generated, key findings summarized in 5 bullet points
 

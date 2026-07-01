@@ -80,7 +80,7 @@ ui/   ──┘          ▼
 3. **RAG Retrieval** — Selected idea is embedded, top-K chunks fetched from Chroma
 4. **Draft Generation** — LLM writes structured draft using KB chunks as context
 5. **Self-Evaluation** — LLM scores draft on 6 criteria (1–5 scale each):
-   - Clarity, Relevance, Completeness, Accuracy, Actionability, KB Alignment
+   - Clarity, Relevance, Completeness, Accuracy, Actionability, Retrieval Relevance
 6. **Improvement Loop** — If average score < 4.0, improve and re-evaluate. Max 2 iterations.
 7. **Web Research** — Generate search queries, fetch and summarize external sources
 8. **Final Output** — Combine improved draft + research → final article + image prompt
