@@ -1,0 +1,62 @@
+{
+  "recommended_completeness_low": 0.9214,
+  "recommended_completeness_high": 0.9932,
+  "low_percentile": 10,
+  "high_percentile": 90,
+  "target_word_range": [
+    600,
+    900
+  ],
+  "model": "gemini-3.1-flash-lite",
+  "samples": [
+    {
+      "topic": "software testing best practices",
+      "idea": "The Shift-Left Manifesto: Integrating Testing into Early Development Cycles",
+      "word_count": 752,
+      "raw_completeness": 0.996
+    },
+    {
+      "topic": "test-driven development",
+      "idea": "Test-Driven Development vs. Test-Last Development: A Performance Comparison",
+      "word_count": 780,
+      "raw_completeness": 0.94
+    },
+    {
+      "topic": "continuous integration and deployment",
+      "idea": "The Essential Guide to Building a Robust CI/CD Pipeline for Microservices",
+      "word_count": 754,
+      "raw_completeness": 0.992
+    },
+    {
+      "topic": "unit testing vs integration testing",
+      "idea": "Unit Testing vs. Integration Testing: When to Use Which Strategy",
+      "word_count": 765,
+      "raw_completeness": 0.97
+    },
+    {
+      "topic": "automated regression testing",
+      "idea": "The ROI of Automated Regression Testing: How to Justify the Investment",
+      "word_count": 769,
+      "raw_completeness": 0.962
+    },
+    {
+      "topic": "code review practices",
+      "idea": "How to Give Constructive Feedback Without Demotivating Your Team",
+      "word_count": 779,
+      "raw_completeness": 0.942
+    },
+    {
+      "topic": "cloud cost optimization",
+      "idea": "7 Proven Strategies to Reduce Your AWS Monthly Bill Without Sacrificing Performance",
+      "word_count": 764,
+      "raw_completeness": 0.972
+    },
+    {
+      "topic": "remote team productivity",
+      "idea": "7 Asynchronous Communication Strategies to Reduce Meeting Fatigue",
+      "word_count": 811,
+      "raw_completeness": 0.878
+    }
+  ],
+  "generated_at": "2026-07-01T06:11:28.271689+00:00"
+}

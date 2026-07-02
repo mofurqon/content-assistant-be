@@ -1,9 +1,9 @@
 {
-  "recommended_threshold": 0.6638,
-  "f1": 0.8368,
-  "precision": 0.8403,
+  "recommended_threshold": 0.6649,
+  "f1": 0.8333,
+  "precision": 0.8333,
   "recall": 0.8333,
   "model": "gemini-embedding-2",
   "pairs_evaluated": 960,
-  "generated_at": "2026-06-28T07:23:59.551522+00:00"
+  "generated_at": "2026-07-01T23:03:21.339141+00:00"
 }

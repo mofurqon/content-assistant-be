@@ -13,7 +13,7 @@ This is a case study prototype — not production-ready.
 - **Language**: Python 3.11+
 - **UI**: Streamlit (streaming supported)
 - **API**: FastAPI + Uvicorn (HTTP interface for external clients)
-- **LLM + Embeddings**: Google Gemini (Flash for LLM, embedding-001 for embeddings)
+- **LLM + Embeddings**: Google Gemini (Flash for LLM, gemini-embedding-2 for embeddings)
 - **Orchestration**: LangChain
 - **Vector DB**: Chroma (local, persistent)
 - **Web Research**: Firecrawl (or mocked)
@@ -80,7 +80,7 @@ ui/   ──┘          ▼
 3. **RAG Retrieval** — Selected idea is embedded, top-K chunks fetched from Chroma
 4. **Draft Generation** — LLM writes structured draft using KB chunks as context
 5. **Self-Evaluation** — LLM scores draft on 6 criteria (1–5 scale each):
-   - Clarity, Relevance, Completeness, Accuracy, Actionability, KB Alignment
+   - Clarity, Relevance, Completeness, Accuracy, Actionability, Retrieval Relevance
 6. **Improvement Loop** — If average score < 4.0, improve and re-evaluate. Max 2 iterations.
 7. **Web Research** — Generate search queries, fetch and summarize external sources
 8. **Final Output** — Combine improved draft + research → final article + image prompt
@@ -103,7 +103,7 @@ ui/   ──┘          ▼
 ```
 GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-2.0-flash             # LLM model used for all generation steps
-GEMINI_EMBED_MODEL=embedding-001          # embedding model (prefixed with models/ at use)
+GEMINI_EMBED_MODEL=gemini-embedding-2    # embedding model (prefixed with models/ at use)
 FIRECRAWL_API_KEY=your_key_here           # optional, can be mocked
 ```
 All required vars are validated at use via `require_env()` in `config/settings.py`.

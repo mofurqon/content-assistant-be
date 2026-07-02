@@ -43,6 +43,12 @@ def ingest():
                 embedding=embeddings,
                 collection_name=COLLECTION_NAME,
                 persist_directory=str(CHROMA_PATH),
+                # Without this, Chroma defaults to L2 distance. Its relevance-score
+                # formula for L2 (1 - distance/sqrt(2)) is NOT cosine similarity and
+                # reads systematically lower — retriever.py and calibrate_threshold.py
+                # both assume true cosine similarity, so the collection must be built
+                # with this metric or every downstream score/threshold is miscalibrated.
+                collection_metadata={"hnsw:space": "cosine"},
             )
         else:
             vectorstore.add_documents(batch)
