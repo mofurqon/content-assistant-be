@@ -27,5 +27,8 @@ langgraph>=1.0
 scikit-learn
 numpy
 
+# Deterministic scoring
+textstat
+
 # Rate limiting (Railway only)
 slowapi>=0.1.9

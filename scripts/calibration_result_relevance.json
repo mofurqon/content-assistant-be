@@ -1,0 +1,58 @@
+{
+  "recommended_relevance_low": 0.8144,
+  "recommended_relevance_high": 0.8449,
+  "low_percentile": 10,
+  "high_percentile": 90,
+  "model": "gemini-embedding-2",
+  "samples": [
+    {
+      "topic": "software testing best practices",
+      "idea": "7 Essential Software Testing Best Practices for Agile Teams",
+      "word_count": 786,
+      "similarity": 0.818
+    },
+    {
+      "topic": "test-driven development",
+      "idea": "TDD for Beginners: A Practical Guide to Writing Your First Test",
+      "word_count": 770,
+      "similarity": 0.8429
+    },
+    {
+      "topic": "continuous integration and deployment",
+      "idea": "The ROI of CI/CD: How Automation Accelerates Time-to-Market",
+      "word_count": 755,
+      "similarity": 0.8432
+    },
+    {
+      "topic": "unit testing vs integration testing",
+      "idea": "Unit Testing vs. Integration Testing: When to Use Which for Maximum Coverage",
+      "word_count": 761,
+      "similarity": 0.8404
+    },
+    {
+      "topic": "automated regression testing",
+      "idea": "The ROI of Automated Regression Testing: How to Calculate Value for Stakeholders",
+      "word_count": 764,
+      "similarity": 0.8489
+    },
+    {
+      "topic": "code review practices",
+      "idea": "How to Give Constructive Feedback Without Demotivating Your Teammates",
+      "word_count": 750,
+      "similarity": 0.8176
+    },
+    {
+      "topic": "cloud cost optimization",
+      "idea": "7 Proven Strategies to Reduce Cloud Waste Without Sacrificing Performance",
+      "word_count": 745,
+      "similarity": 0.8352
+    },
+    {
+      "topic": "remote team productivity",
+      "idea": "The Science of Deep Work: How to Minimize Digital Distractions in a Remote Environment",
+      "word_count": 728,
+      "similarity": 0.807
+    }
+  ],
+  "generated_at": "2026-07-01T15:28:26.633244+00:00"
+}

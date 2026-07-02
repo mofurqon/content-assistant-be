@@ -1,0 +1,99 @@
+{
+  "recommended_retrieval_relevance_low": 0.5998,
+  "recommended_retrieval_relevance_high": 0.7158,
+  "low_percentile": 10,
+  "high_percentile": 90,
+  "top_k": 5,
+  "collection": "knowledge_base",
+  "model": "gemini-embedding-2",
+  "samples": [
+    {
+      "query": "Why Shift-Left Testing Reduces Production Bugs",
+      "scores": [
+        0.7278,
+        0.7178,
+        0.7124,
+        0.6996,
+        0.6984
+      ],
+      "avg": 0.7112
+    },
+    {
+      "query": "A Practical Guide to the Test Pyramid",
+      "scores": [
+        0.7198,
+        0.6985,
+        0.692,
+        0.6914,
+        0.6913
+      ],
+      "avg": 0.6986
+    },
+    {
+      "query": "Unit vs Integration vs E2E: Choosing the Right Test",
+      "scores": [
+        0.7078,
+        0.7058,
+        0.7032,
+        0.6996,
+        0.6984
+      ],
+      "avg": 0.703
+    },
+    {
+      "query": "Test-Driven Development in Practice",
+      "scores": [
+        0.7384,
+        0.7305,
+        0.7248,
+        0.7205,
+        0.719
+      ],
+      "avg": 0.7266
+    },
+    {
+      "query": "How to Build a Reliable CI Pipeline",
+      "scores": [
+        0.6506,
+        0.6415,
+        0.6355,
+        0.6257,
+        0.6247
+      ],
+      "avg": 0.6356
+    },
+    {
+      "query": "Code Review Best Practices for Engineering Teams",
+      "scores": [
+        0.7318,
+        0.7084,
+        0.6966,
+        0.6945,
+        0.6919
+      ],
+      "avg": 0.7046
+    },
+    {
+      "query": "Cloud Cost Optimization Strategies",
+      "scores": [
+        0.6186,
+        0.6066,
+        0.601,
+        0.6002
+      ],
+      "avg": 0.6066
+    },
+    {
+      "query": "Remote Team Productivity Tips",
+      "scores": [
+        0.5904,
+        0.5899,
+        0.584,
+        0.5792,
+        0.5762
+      ],
+      "avg": 0.5839
+    }
+  ],
+  "generated_at": "2026-07-01T04:35:57.116195+00:00"
+}

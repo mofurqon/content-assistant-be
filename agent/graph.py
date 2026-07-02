@@ -73,7 +73,9 @@ async def node_review(state: PipelineState) -> dict:
 
 
 async def node_evaluate(state: PipelineState) -> dict:
-    result = await asyncio.to_thread(evaluate, state["current_draft"], state["kb_chunks"], state["kb_scores"])
+    result = await asyncio.to_thread(
+        evaluate, state["idea"], state["current_draft"], state["kb_chunks"], state["kb_scores"]
+    )
     return {"evaluations": state["evaluations"] + [result]}
 
 

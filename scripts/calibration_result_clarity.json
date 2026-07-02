@@ -1,0 +1,58 @@
+{
+  "recommended_clarity_low": 26.47,
+  "recommended_clarity_high": 39.47,
+  "low_percentile": 10,
+  "high_percentile": 90,
+  "model": "gemini-3.1-flash-lite",
+  "samples": [
+    {
+      "topic": "software testing best practices",
+      "idea": "7 Essential Software Testing Best Practices for Agile Teams",
+      "word_count": 775,
+      "fre": 39.57
+    },
+    {
+      "topic": "test-driven development",
+      "idea": "Why Test-Driven Development is the Secret to Reducing Technical Debt",
+      "word_count": 758,
+      "fre": 33.03
+    },
+    {
+      "topic": "continuous integration and deployment",
+      "idea": "The Essential Guide to Building a Robust CI/CD Pipeline for Microservices",
+      "word_count": 780,
+      "fre": 33.63
+    },
+    {
+      "topic": "unit testing vs integration testing",
+      "idea": "Unit Testing vs. Integration Testing: When to Use Which for Maximum Coverage",
+      "word_count": 763,
+      "fre": 25.84
+    },
+    {
+      "topic": "automated regression testing",
+      "idea": "The ROI of Automated Regression Testing: How to Justify the Investment to Stakeholders",
+      "word_count": 746,
+      "fre": 26.95
+    },
+    {
+      "topic": "code review practices",
+      "idea": "How to Give Constructive Feedback Without Damaging Team Morale",
+      "word_count": 797,
+      "fre": 39.42
+    },
+    {
+      "topic": "cloud cost optimization",
+      "idea": "7 Proven Strategies to Reduce Your AWS Monthly Bill by 30%",
+      "word_count": 762,
+      "fre": 26.74
+    },
+    {
+      "topic": "remote team productivity",
+      "idea": "7 Asynchronous Communication Strategies to Reduce Meeting Fatigue",
+      "word_count": 823,
+      "fre": 30.58
+    }
+  ],
+  "generated_at": "2026-07-01T04:08:11.482432+00:00"
+}
